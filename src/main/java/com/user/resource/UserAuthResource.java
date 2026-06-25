@@ -1,6 +1,5 @@
 package com.user.resource;
 
-import com.common.exception.ConflictException;
 import com.common.response.ApiResponse;
 import com.user.dto.UserLoginResponse;
 import com.user.dto.UserResponse;
@@ -8,7 +7,6 @@ import com.user.dto.request.UserLoginRequest;
 import com.user.dto.request.UserRegistrationRequest;
 import com.user.model.User;
 import com.user.service.UserService;
-
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -22,26 +20,22 @@ import jakarta.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserAuthResource {
-    @Inject
-    UserService userService;
+  @Inject UserService userService;
 
-    @POST
-    @Path("/register")
-    public Response register(@Valid UserRegistrationRequest request) {
+  @POST
+  @Path("/register")
+  public Response register(@Valid UserRegistrationRequest request) {
 
-        User user = userService.register(request);
-        UserResponse userResponse = new UserResponse(user);
-        return ApiResponse.success(userResponse, "User registered successfully");
+    User user = userService.register(request);
+    UserResponse userResponse = new UserResponse(user);
+    return ApiResponse.success(userResponse, "User registered successfully");
+  }
 
-    }
+  @POST
+  @Path("/login")
+  public Response login(@Valid UserLoginRequest request) {
 
-    @POST
-    @Path("/login")
-    public Response login(
-            @Valid UserLoginRequest request) {
-
-        UserLoginResponse userLoginResponse = userService.login(request);
-        return ApiResponse.success(userLoginResponse, "Login successfully");
-
-    }
+    UserLoginResponse userLoginResponse = userService.login(request);
+    return ApiResponse.success(userLoginResponse, "Login successfully");
+  }
 }
