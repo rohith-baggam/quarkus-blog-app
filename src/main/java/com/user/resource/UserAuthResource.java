@@ -1,5 +1,6 @@
 package com.user.resource;
 
+import com.common.response.ApiResponse;
 import com.user.dto.UserLoginResponse;
 import com.user.dto.UserResponse;
 import com.user.dto.request.UserLoginRequest;
@@ -29,11 +30,11 @@ public class UserAuthResource {
 
         try {
             User user = userService.register(request);
-            return Response.status(
-                    Response.Status.OK).entity(UserResponse.from(user)).build();
+            UserResponse userResponse = UserResponse.from(user);
+            return ApiResponse.success(userResponse, "User registered successfully");
 
         } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+            return ApiResponse.error(null, "Email already exist");
         }
 
     }
@@ -44,12 +45,10 @@ public class UserAuthResource {
             @Valid UserLoginRequest request) {
 
         try {
-
             UserLoginResponse userLoginResponse = userService.login(request);
-
-            return Response.status(Response.Status.OK).entity(userLoginResponse).build();
+            return ApiResponse.success(userLoginResponse, "Login successfully");
         } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Invalid credentials").build();
+            return ApiResponse.error(null, "Invalid credentials");
         }
 
     }
