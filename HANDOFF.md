@@ -2,19 +2,20 @@
 
 ## Who I Am
 - 4 years Django/Python/PostgreSQL/Redis/Celery backend experience
-- Basic Spring Boot knowledge
-- Strong database and server knowledge
-- Solution Architect and Backend Engineer by role
+- Tech Lead and Solution Architect
+- Built a complete generic framework on top of DRF (CoreGenericUtils, CoreGenericPostAPIView, handlers, standardized responses)
+- Strong database knowledge, basic Spring Boot knowledge
+- Writes conventional, highly readable enterprise-grade code that a team can follow
 
 ## Your Role
 You are my TEACHER, not my code writer.
+- Ask me a question / let me guess BEFORE giving the answer
 - Explain concepts first, then guide me to write code myself
 - Always map Quarkus concepts to Django equivalents
-- Ask me a question / let me guess BEFORE giving the answer
 - Give hints when I'm stuck, not complete solutions
 - One concept at a time
-- Ask me to try first before helping
 - Never write complete files for me
+- Show small code snippets only to demonstrate a concept
 
 ## Project Goal
 Building a Blog Application in Quarkus to learn:
@@ -43,95 +44,183 @@ Building a Blog Application in Quarkus to learn:
 ## Project Location
 ~/Desktop/stuff/java-learning/quarkus-learning/learn-by-doing/project/blog-app
 
-## Project Package Structure
+## Current Folder Structure
+```
 src/main/java/com/
-  auth/model/          → auth related models (empty for now)
-  blog/model/          → BlogPost.java, BlogPostImage.java
-  common/model/        → BaseEntity.java
-  learning/            → HealthResource.java, HealthReturnResponse.java
-  user/model/          → User.java
+  blog/model/
+    BlogPost.java
+    BlogPostImage.java
+  common/
+    exception/
+      ConflictException.java
+      GlobalExceptionMapper.java
+      ResourceNotFoundException.java
+      UnauthorizedException.java
+    model/
+      BaseEntity.java
+    response/
+      ApiResponse.java
+    security/
+      CurrentUser.java        # @RequestScoped — holds logged-in User (request.user)
+  learning/
+    HealthResource.java
+    HealthReturnResponse.java
+  user/
+    dto/
+      request/
+        UserLoginRequest.java
+        UserRegistrationRequest.java
+      UserLoginResponse.java
+      UserResponse.java
+    model/
+      User.java
+    repository/
+      UserRepository.java
+    resource/
+      UserAuthResource.java
+    service/
+      UserService.java
+  utils/
+    JwtUtil.java
 
 src/main/resources/
   application.properties
+  privateKey.pem              # RS256 signing key (PKCS#8)
+  publicKey.pem               # RS256 verify key
   db/migration/
     V1__create_initial_tables.sql
+```
 
 ## Dependencies in pom.xml
 - quarkus-rest
 - quarkus-rest-jackson
 - quarkus-hibernate-orm-panache
-- quarkus-jdbc-mysql (added at project creation, sqlite added manually)
+- quarkus-jdbc-mysql
 - quarkus-flyway
 - quarkus-smallrye-jwt
 - quarkus-websockets
 - quarkus-smallrye-openapi
-- quarkus-hibernate-validator (added for @NotBlank, @Email, @Valid)
-- quarkus-elytron-security-common (added for BcryptUtil password hashing)
-- sqlite-jdbc (org.xerial)
-- hibernate-community-dialects
+- quarkus-hibernate-validator (for @NotBlank, @Email, @Valid)
+- quarkus-elytron-security-common (for BcryptUtil password hashing)
+- quarkus-jdbc-sqlite (quarkiverse)
+- spotless-maven-plugin (code formatting, auto-remove unused imports)
 
 ## Progress Completed
-✅ Step 1 - Project created with Quarkus CLI
-✅ Step 2 - HealthResource working on /api/health
-✅ Step 3 - Swagger UI working at /swagger-ui
-✅ Step 4 - DTO pattern learned (HealthReturnResponse)
-✅ Step 5 - Models created: BaseEntity (@MappedSuperclass), User, BlogPost, BlogPostImage
-✅ Step 6 - V1 Flyway migration SQL written and running
-✅ Step 7 - Server starts successfully, SQLite DB migrated
-✅ Step 8 - MVC pattern: Resource, Service, Repository layers built for User
-✅ Step 9 - User registration API working end-to-end
-✅ Step 10 - User login API working, JWT token generated (RS256, 7 days expiry)
-✅ Step 11 - JwtUtil created in com.utils (static utility pattern)
+✅ Step 1  - Project created with Quarkus CLI
+✅ Step 2  - HealthResource working on /api/health
+✅ Step 3  - Swagger UI working at /swagger-ui
+✅ Step 4  - DTO pattern learned (HealthReturnResponse)
+✅ Step 5  - Models: BaseEntity (@MappedSuperclass), User, BlogPost, BlogPostImage
+✅ Step 6  - V1 Flyway migration SQL written (TIMESTAMP, snake_case columns)
+✅ Step 7  - Server starts, SQLite DB migrated
+✅ Step 8  - MVC pattern: Resource, Service, Repository for User
+✅ Step 9  - User registration API working end-to-end
+✅ Step 10 - User login API + JWT token (RS256, 7 days expiry)
+✅ Step 11 - JwtUtil in com.utils (static utility)
+✅ Step 12 - ApiResponse<T> wrapper with success() and error() factory methods
+✅ Step 13 - GlobalExceptionMapper with ConflictException, UnauthorizedException, ResourceNotFoundException
+✅ Step 14 - Spotless formatter + pre-commit hook (.git/hooks/pre-commit)
 
-## What's Next
-- Standardized API response wrapper (ApiResponse<T>) like CoreGenericUtils.success_response
-- Global exception handling with ExceptionMapper (remove try/catch from every Resource)
-- Protect endpoints with @RolesAllowed / @Authenticated
-- Blog post CRUD API
+## ✅ Prior bugs resolved
+- Login auth exceptions now use `UnauthorizedException` (not Conflict).
+- `UserResponse` got a `UserResponse(User)` constructor → `new UserResponse(user)` is valid (chose constructor over `.from()` factory).
+- ⚠️ Minor known gap: that constructor does NOT set `isActive`, so it always serializes `false`. Not yet fixed.
+
+## Step 15 — Real RS256 keys + JWT config (DONE)
+- Generated `src/main/resources/privateKey.pem` (PKCS#8) + `publicKey.pem` via openssl. (Previously relied on dev-mode auto-generated keys — ephemeral, dev-only.)
+- Added to `application.properties`:
+  ```
+  smallrye.jwt.sign.key.location=privateKey.pem
+  mp.jwt.verify.publickey.location=publicKey.pem
+  mp.jwt.verify.issuer=blog-app
+  ```
+- Login confirmed: still returns 200 + RS256 token, now signed by our private key.
+- Key learning: `.sign()` / `@Authenticated` read keys from config automatically (convention-over-config); `.properties` files have NO inline comments and NO quoted values.
+
+## Step 16 — Authorization (IN PROGRESS)
+Two-layer model:
+- **Layer 1** `@Authenticated` — token valid (signature/expiry/issuer). Free via SmallRye, no DB. (DRF `IsAuthenticated`.)
+- **Layer 2** custom DB check — user exists + `is_active`. Runs AFTER layer 1 (sub only trustworthy once token validated).
+
+Done: `com.common.security.CurrentUser` — `@RequestScoped` CDI bean (`private User user` + getter/setter). The `request.user` holder.
+
+NEXT (resume here):
+1. Build a `ContainerRequestFilter` (`@Provider`) = Django middleware. Inject `JsonWebToken` → read `sub` → load User via UserRepository → check `is_active` → `currentUser.setUser(user)`.
+2. Add `@Authenticated` to protected endpoints (register + login stay open).
+3. Add `@RolesAllowed("user")` (groups claim already present in token).
+4. Then: Blog post CRUD API (applying full MVC pattern independently).
+
+## Key Concepts Learned This Session
+- MVC: Resource → Service → Repository — who does what
+- DTO pattern: Request (input) + Response (output), never expose raw Entity
+- ApiResponse<T>: standardized wrapper, static factory methods (success/error)
+- GlobalExceptionMapper: @Provider, one place for all exceptions
+- Custom exceptions: ConflictException, UnauthorizedException, ResourceNotFoundException
+- @Transactional: required for writes, NOT required for reads
+- Optional<T>: never null, use isEmpty()/orElseThrow()
+- JWT: RS256 (asymmetric), generated with SmallRye Jwt.issuer().subject().sign()
+- Static utility vs CDI bean: static = no @Inject possible, CDI = injectable
 
 ## Understanding Tracker
-Track understanding level per area. Review and revise any ⚠️ or ❌ areas at project end.
-
 | Area | Level | Notes |
 |---|---|---|
-| Project setup & Quarkus CLI | ✅ Solid | No issues |
-| application.properties config | ✅ Solid | Mapped to Django settings.py |
-| Flyway migrations | ✅ Solid | Understands can't modify after run |
-| @Entity / @MappedSuperclass | ✅ Solid | Figured out @MappedSuperclass independently after hint |
-| @JoinColumn / FK relationships | ✅ Solid | Understood after Django ForeignKey comparison |
-| SQL snake_case vs Java camelCase | ✅ Solid | Identified column name mismatch independently |
-| @Column(name=) mapping | ✅ Solid | Understands why it exists |
-| MVC layer separation (why) | ✅ Solid | Built registration + login end-to-end independently |
-| PanacheRepository | ✅ Solid | Used findByEmail, orElseThrow, persist correctly |
-| CDI / @Inject / @ApplicationScoped | ⚠️ Developing | Seen @Inject, not yet comfortable with CDI bean lifecycle |
-| Jakarta Validation (@NotBlank etc) | ✅ Solid | Used correctly, understands it replaces is_valid() |
-| @Transactional | ✅ Solid | Understands WHY writes need it, WHY reads don't |
-| DTO pattern (Request/Response) | ✅ Solid | Wrote Request + Response DTOs independently |
-| Optional<T> | ✅ Solid | Understood isEmpty vs null, orElseThrow pattern |
-| Static utility vs CDI bean | ⚠️ Developing | Understands the difference, not yet comfortable with CDI |
-| JWT generation (SmallRye) | ✅ Solid | Built JwtUtil, understands RS256 vs HS256 tradeoffs |
-| JWT authentication | ❌ Not started | |
-| Role-based authorization | ❌ Not started | |
-| ExceptionMapper (global error handling) | ❌ Not started | |
+| Project setup & Quarkus CLI | ✅ Solid | |
+| application.properties config | ✅ Solid | |
+| Flyway migrations | ✅ Solid | Can't modify after run; delete DB in dev to reset |
+| @Entity / @MappedSuperclass | ✅ Solid | |
+| @JoinColumn / FK relationships | ✅ Solid | |
+| SQL snake_case vs Java camelCase | ✅ Solid | @Column(name=) bridges the gap |
+| DATETIME vs TIMESTAMP | ✅ Solid | Hibernate maps LocalDateTime → TIMESTAMP |
+| MVC layer separation | ✅ Solid | Built register + login end-to-end |
+| PanacheRepository | ✅ Solid | findByEmail, orElseThrow, persist |
+| Jakarta Validation (@NotBlank etc) | ✅ Solid | Replaces is_valid() |
+| @Transactional | ✅ Solid | WHY writes need it, reads don't |
+| DTO pattern (Request/Response) | ✅ Solid | Wrote independently |
+| Optional<T> | ✅ Solid | orElseThrow pattern |
+| Static factory method (.from()) | ✅ Solid | vs constructor — Django @classmethod |
+| ApiResponse<T> generics | ⚠️ Developing | Struggled with <T> on static methods |
+| JWT generation (SmallRye) | ✅ Solid | RS256 vs HS256 tradeoffs understood |
+| Custom exceptions + ExceptionMapper | ✅ Solid | @Provider pattern, exception routing |
+| CDI / @Inject / @ApplicationScoped | ⚠️ Developing | Seen it, not fully comfortable yet |
+| Static utility vs CDI bean | ⚠️ Developing | Understands difference |
+| Spotless + pre-commit | ✅ Solid | Added to pom.xml, hook configured |
+| RS256 keys + JWT verify config | ✅ Solid | privateKey/publicKey.pem + sign/verify/issuer props |
+| CurrentUser @RequestScoped bean | ✅ Solid | request.user holder, getter/setter |
+| @Authenticated / @RolesAllowed | ⚠️ In progress | concept learned, filter next |
+| ContainerRequestFilter (middleware) | ❌ Next step | load User + is_active → setUser |
+| Blog post CRUD | ❌ Not started | |
 | Pagination / filtering | ❌ Not started | |
 | File uploads | ❌ Not started | |
 | WebSockets | ❌ Not started | |
 | Docker + GraalVM native | ❌ Not started | |
 
-## Key Django → Quarkus Mappings Learned So Far
+## Key Django → Quarkus Mappings
 | Django | Quarkus |
 |---|---|
 | models.py | Entity class with @Entity |
 | models.Model | extends PanacheEntityBase |
+| abstract = True in Meta | @MappedSuperclass |
 | auto_now_add | @PrePersist |
 | auto_now | @PreUpdate |
-| ForeignKey | @ManyToOne |
-| abstract = True in Meta | @MappedSuperclass |
+| ForeignKey | @ManyToOne + @JoinColumn |
 | migrations/ | db/migration/ (Flyway SQL files) |
-| makemigrations | You write SQL manually |
-| migrate | Runs on startup via flyway.migrate-at-start=true |
+| makemigrations | Write SQL manually |
+| migrate | flyway.migrate-at-start=true |
 | settings.py | application.properties |
 | requirements.txt | pom.xml |
 | urls.py | @Path on Resource class |
-| views.py | Resource class |
-| serializers.py | DTO class or Java Record |
+| views.py / APIView | Resource class |
+| serializers.py fields | DTO with @NotBlank/@Email etc |
+| serializer.is_valid() | @Valid on Resource method param |
+| to_representation() | UserResponse.from(user) |
+| @classmethod | static factory method |
+| Model.objects.filter() | PanacheRepository.find() |
+| model.save() | repository.persist(model) |
+| @transaction.atomic | @Transactional |
+| raise ValidationError | throw new ConflictException |
+| raise AuthenticationFailed | throw new UnauthorizedException |
+| raise Http404 | throw new ResourceNotFoundException |
+| EXCEPTION_HANDLER in settings | @Provider ExceptionMapper |
+| success_response() utility | ApiResponse.success() |
+| black + isort | Spotless Maven plugin |
+| pre-commit hooks | .git/hooks/pre-commit |
