@@ -10,7 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 
 @Entity
-@Table(name = "BlogPostImage")
+@Table(name = "blog_post_images")
 public class BlogPostImage extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

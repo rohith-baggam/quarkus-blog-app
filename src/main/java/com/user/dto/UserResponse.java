@@ -11,12 +11,12 @@ public class UserResponse {
     public String email;
     public boolean isActive;
 
-    public static UserResponse from(User user) {
-        UserResponse response = new UserResponse();
-        response.id = user.id;
-        response.username = user.username;
-        response.email = user.email;
-        return response;
+    public UserResponse(User user) {
+
+        this.id = user.id;
+        this.username = user.username;
+        this.email = user.email;
+
     }
 
 }

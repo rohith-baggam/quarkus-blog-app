@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "BlogPosts")
+@Table(name = "blog_posts")
 public class BlogPost extends BaseEntity {
 
     @Column(name = "title", length = 256, nullable = false, unique = true)
@@ -21,7 +21,7 @@ public class BlogPost extends BaseEntity {
     public String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "authorId", nullable = false)
+    @JoinColumn(name = "author_id", nullable = false)
     public User author;
 
 }

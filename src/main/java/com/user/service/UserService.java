@@ -2,6 +2,7 @@ package com.user.service;
 
 import java.util.Optional;
 
+import com.common.exception.ConflictException;
 import com.user.dto.UserLoginResponse;
 import com.user.dto.request.UserLoginRequest;
 import com.user.dto.request.UserRegistrationRequest;
@@ -23,7 +24,7 @@ public class UserService {
     @Transactional
     public User register(UserRegistrationRequest request) {
         userRepository.findByEmail(request.email).ifPresent(existing -> {
-            throw new IllegalArgumentException("Email already registered");
+            throw new ConflictException("Email already registered");
         });
         User user = new User();
         user.username = request.username;
@@ -39,11 +40,11 @@ public class UserService {
             UserLoginRequest request) {
 
         User user = userRepository.findByEmail(request.email).orElseThrow(
-                () -> new IllegalArgumentException(
+                () -> new ConflictException(
                         "Email Incorrect email"));
 
         if (!BcryptUtil.matches(request.password, user.password)) {
-            throw new IllegalArgumentException("Incorrect password");
+            throw new ConflictException("Incorrect password");
         }
 
         String jwtToken = JwtUtil.generateJwt(user);

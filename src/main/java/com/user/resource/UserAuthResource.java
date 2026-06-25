@@ -1,5 +1,6 @@
 package com.user.resource;
 
+import com.common.exception.ConflictException;
 import com.common.response.ApiResponse;
 import com.user.dto.UserLoginResponse;
 import com.user.dto.UserResponse;
@@ -28,14 +29,9 @@ public class UserAuthResource {
     @Path("/register")
     public Response register(@Valid UserRegistrationRequest request) {
 
-        try {
-            User user = userService.register(request);
-            UserResponse userResponse = UserResponse.from(user);
-            return ApiResponse.success(userResponse, "User registered successfully");
-
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error(null, "Email already exist");
-        }
+        User user = userService.register(request);
+        UserResponse userResponse = new UserResponse(user);
+        return ApiResponse.success(userResponse, "User registered successfully");
 
     }
 
@@ -44,12 +40,8 @@ public class UserAuthResource {
     public Response login(
             @Valid UserLoginRequest request) {
 
-        try {
-            UserLoginResponse userLoginResponse = userService.login(request);
-            return ApiResponse.success(userLoginResponse, "Login successfully");
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error(null, "Invalid credentials");
-        }
+        UserLoginResponse userLoginResponse = userService.login(request);
+        return ApiResponse.success(userLoginResponse, "Login successfully");
 
     }
 }

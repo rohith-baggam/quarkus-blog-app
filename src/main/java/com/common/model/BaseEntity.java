@@ -16,7 +16,7 @@ import jakarta.persistence.PreUpdate;
 public class BaseEntity extends PanacheEntityBase {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "TEXT")
     public UUID id;
 
     @Column(name = "created_at", updatable = false, nullable = false)
