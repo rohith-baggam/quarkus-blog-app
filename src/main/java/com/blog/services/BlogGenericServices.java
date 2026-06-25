@@ -9,6 +9,7 @@ import com.blog.model.BlogPost;
 import com.blog.model.BlogPostImage;
 import com.blog.repository.BlogPostImageRepository;
 import com.blog.repository.BlogPostRepository;
+import com.blog.utils.BlogPostListUtils;
 import com.common.exception.ConflictException;
 import com.common.security.CurrentUser;
 import com.user.dto.UserResponse;
@@ -17,6 +18,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @ApplicationScoped
 public class BlogGenericServices {
@@ -64,6 +67,8 @@ public class BlogGenericServices {
     }
   }
 
+  @Inject BlogPostListUtils blogPostListUtils;
+
   public List<BlogPaginatedResponse> getBlogPaginatedList(BlogListParams blogListParams) {
 
     List<BlogPost> blogList =
@@ -72,34 +77,28 @@ public class BlogGenericServices {
             .range(blogListParams.offset, blogListParams.limit + blogListParams.offset - 1)
             .list();
 
-    List<BlogPaginatedResponse> response = new ArrayList<>();
+    Map<UUID, List<BlogPostImage>> imagesByPost = blogPostListUtils.getBlogPostImageMap(blogList);
 
-    for (int i = 0; i < blogList.size(); i++) {
-      BlogPost blogPost = blogList.get(i);
+    List<BlogPaginatedResponse> blogPaginatedResponses = new ArrayList<>();
+    for (BlogPost blogPost : blogList) {
       UserResponse userResponse = new UserResponse(blogPost.author);
 
-      BlogPaginatedResponse blogPaginatedResponse =
-          new BlogPaginatedResponse(
-              blogPost, userResponse, this.getBlogPostImageListResponse(blogPost));
-      response.add(blogPaginatedResponse);
+      List<BlogPostImage> images = imagesByPost.get(blogPost.id);
+      if (!images.isEmpty()) {
+        List<BlogPostImageResponse> imageResponses = getBlogPostImageListResponse(images);
+        blogPaginatedResponses.add(
+            new BlogPaginatedResponse(blogPost, userResponse, imageResponses));
+      }
     }
 
-    return response;
+    return blogPaginatedResponses;
   }
 
-  public List<BlogPostImageResponse> getBlogPostImageListResponse(BlogPost blogPost) {
-    List<BlogPostImage> blogImageList = blogPostImageRepository.find("post", blogPost).list();
-
-    List<BlogPostImageResponse> blogPostImageResponseList = new ArrayList<>();
-    for (int i = 0; i < blogImageList.size(); i++) {
-
-      BlogPostImage blogPostImage = blogImageList.get(i);
-
-      BlogPostImageResponse blogPostImageResponse = new BlogPostImageResponse(blogPostImage);
-
-      blogPostImageResponseList.add(blogPostImageResponse);
+  public List<BlogPostImageResponse> getBlogPostImageListResponse(List<BlogPostImage> images) {
+    List<BlogPostImageResponse> blogPostImageResponses = new ArrayList<>();
+    for (BlogPostImage blogPostImage : images) {
+      blogPostImageResponses.add(new BlogPostImageResponse(blogPostImage));
     }
-
-    return blogPostImageResponseList;
+    return blogPostImageResponses;
   }
 }
