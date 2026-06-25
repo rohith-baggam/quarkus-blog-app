@@ -8,19 +8,21 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
+@MappedSuperclass
 public class BaseEntity extends PanacheEntityBase {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     public UUID id;
 
-    @Column(name = "createdAt", updatable = false, nullable = false)
+    @Column(name = "created_at", updatable = false, nullable = false)
     public LocalDateTime createdAt;
 
-    @Column(name = "updatedAt", nullable = false)
+    @Column(name = "updated_at", nullable = false)
     public LocalDateTime updatedAt;
 
     @PrePersist
