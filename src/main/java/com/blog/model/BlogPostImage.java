@@ -1,5 +1,7 @@
 package com.blog.model;
 
+import com.common.model.BaseEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
@@ -9,7 +11,7 @@ import jakarta.persistence.JoinColumn;
 
 @Entity
 @Table(name = "BlogPostImage")
-public class BlogPostImage {
+public class BlogPostImage extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
