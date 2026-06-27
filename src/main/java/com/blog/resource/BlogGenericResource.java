@@ -27,14 +27,6 @@ public class BlogGenericResource {
 
   @Inject BlogGenericServices blogGenericServices;
 
-  @POST
-  @Authenticated
-  @Path("/create-post")
-  public Response createPost(@Valid BlogCreateRequest request) {
-    BlogCreateResponse blogCreateResponse = blogGenericServices.createPost(request);
-    return ApiResponse.success(blogCreateResponse, "Blog Post create successfully");
-  }
-
   @GET
   @Authenticated
   @Path("/post-list-api")
@@ -44,4 +36,23 @@ public class BlogGenericResource {
         blogGenericServices.getBlogPaginatedList(queryParams);
     return ApiResponse.success(paginatedListResponse, "Post fetched successfully");
   }
+
+  @POST
+  @Authenticated
+  @Path("/create-post")
+  public Response createPost(@Valid BlogCreateRequest request) {
+    BlogCreateResponse blogCreateResponse = blogGenericServices.createPost(request);
+    return ApiResponse.success(blogCreateResponse, "Blog Post create successfully");
+  }
+
+  // @PUT
+  // @Authenticated
+  // @Path("/update-post")
+  // public Response updatedPost(
+  // @Valid BlogUpdateRequest request) {
+
+  // BlogUpdateResponse blogUpdateResponse =
+  // blogGenericServices.updatePost(request);
+  // return ApiResponse.success(blogUpdateResponse, "updated successfully");
+  // }
 }

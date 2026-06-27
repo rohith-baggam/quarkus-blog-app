@@ -69,10 +69,38 @@ public class BlogGenericServices {
     }
   }
 
+  // public BlogUpdateResponse updatePost(
+  // BlogUpdateRequest request) {
+
+  // BlogPost blogPost = blogPostRepository.findById(request.postId).orElseThrow(
+  // new ConflictException("Invalid post id"));
+
+  // Map<String, Object> updateMap = new HashMap<>();
+
+  // if (request.title != null && !request.title.equals(blogPost.title)) {
+  // updateMap.put("title", request.title);
+
+  // }
+
+  // if (request.description != null &&
+  // !request.description.equals(blogPost.description)) {
+  // updateMap.put("description", request.description);
+
+  // }
+
+  // blogPostRepository.update("id=" + request.postId.toString(), updateMap);
+  // BlogUpdateResponse blogUpdateResponse = new BlogUpdateResponse(
+  // request.postId,
+  // request.title,
+  // request.description);
+  // return blogUpdateResponse;
+  // }
+
   @Inject BlogPostListUtils blogPostListUtils;
 
-  public PaginatedListResponse<List<BlogPaginatedResponse>> getBlogPaginatedList(
-      BlogListParams blogListParams) {
+  long count = 0;
+
+  public List<BlogPost> getBlogPosts(BlogListParams blogListParams) {
 
     StringBuilder query = new StringBuilder("1=1");
     Map<String, Object> params = new HashMap<>();
@@ -88,12 +116,24 @@ public class BlogGenericServices {
         query.append(" and images is empty");
       }
     }
-    long count = blogPostRepository.find(query.toString(), params).count();
+    if (blogListParams.search != null && !blogListParams.search.isBlank()) {
+      query.append(" and (lower(title) like :search or lower(author.username) like :search) ");
+      params.put("search", "%" + blogListParams.search.toLowerCase() + "%");
+    }
+
+    this.count = blogPostRepository.find(query.toString(), params).count();
     List<BlogPost> blogList =
         blogPostRepository
             .find(query.toString(), params)
             .range(blogListParams.offset, blogListParams.limit + blogListParams.offset - 1)
             .list();
+    return blogList;
+  }
+
+  public PaginatedListResponse<List<BlogPaginatedResponse>> getBlogPaginatedList(
+      BlogListParams blogListParams) {
+
+    List<BlogPost> blogList = this.getBlogPosts(blogListParams);
 
     Map<UUID, List<BlogPostImage>> imagesByPost = blogPostListUtils.getBlogPostImageMap(blogList);
 
@@ -114,7 +154,7 @@ public class BlogGenericServices {
 
     PaginatedListResponse<List<BlogPaginatedResponse>> blogPaginatedListResponse =
         new PaginatedListResponse<>(
-            count, blogListParams.limit, blogListParams.offset, blogPaginatedResponses);
+            this.count, blogListParams.limit, blogListParams.offset, blogPaginatedResponses);
     return blogPaginatedListResponse;
   }
 

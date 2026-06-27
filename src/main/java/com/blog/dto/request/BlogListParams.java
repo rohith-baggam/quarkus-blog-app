@@ -19,4 +19,7 @@ public class BlogListParams {
 
   @QueryParam("isImageExist")
   public Boolean isImageExist;
+
+  @QueryParam("search")
+  public String search;
 }
