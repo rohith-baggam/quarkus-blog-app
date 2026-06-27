@@ -16,4 +16,7 @@ public class BlogListParams {
 
   @QueryParam("authorId")
   public UUID authorId;
+
+  @QueryParam("isImageExist")
+  public Boolean isImageExist;
 }

@@ -81,6 +81,13 @@ public class BlogGenericServices {
       query.append(" and author.id = :authorId");
       params.put("authorId", blogListParams.authorId);
     }
+    if (blogListParams.isImageExist != null) {
+      if (blogListParams.isImageExist) {
+        query.append(" and images is not empty");
+      } else {
+        query.append(" and images is empty");
+      }
+    }
     long count = blogPostRepository.find(query.toString(), params).count();
     List<BlogPost> blogList =
         blogPostRepository
