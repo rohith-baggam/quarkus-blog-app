@@ -1,0 +1,36 @@
+name: Native Build
+
+on:
+  workflow_dispatch:        # manual "Run workflow" button in the Actions tab
+  push:
+    tags: ['v*']            # also runs when you push a tag like v1.0.0
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false      # one OS failing won't cancel the other two
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          native-image: true
+
+      - name: Build native binary
+        shell: bash         # so ./mvnw works on Windows too (Git Bash)
+        run: ./mvnw package -Dnative -DskipTests
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.os }}
+          path: |
+            target/*-runner
+            target/*-runner.exe

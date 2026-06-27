@@ -158,11 +158,29 @@ Done: `com.common.security.CurrentUser` — `@RequestScoped` CDI bean (`private 
 ## Step 21 — N+1 fix (DONE, pending boot fix)
 `com.blog.utils.BlogPostListUtils.getBlogPostImageMap(blogList)`: ONE `find("post.id in ?1", postIds).list()` then groups into `Map<UUID,List<BlogPostImage>>`. Service pulls images via `imagesByPost.getOrDefault(post.id, new ArrayList<>())`. 2 queries total. Django `prefetch_related` pattern (NOT join — join breaks pagination on to-many).
 
-## ⚠️ RESUME HERE
-1. **Add `@ApplicationScoped` to `BlogPostListUtils`** — server was failing to boot ("no bean defining annotation"). Was being fixed at end of session. Confirm boot + 2-query SQL log.
-2. Build remaining `BlogListParams` filters ONE BY ONE: search by title (`like`), sort by title (`Sort`), filter by authorId, filter by createdAt — all optional → dynamic query building.
-3. Pagination metadata in response (total count / page info — DRF `count`/`results` shape).
-4. Then `@RolesAllowed("user")` (groups claim already in token); then blog CRUD read/update/delete + ownership checks.
+## Step 22 — Generic paginated response + filters (DONE)
+- `BlogPostListUtils` got `@ApplicationScoped` (boot fix — 3rd time the CDI lesson hit).
+- Generic `com.common.response.PaginatedListResponse<T>` — fields `count/hasNext/hasPrev/List<T> results`; ctor `(count, limit, offset, results)` computes hasNext/hasPrev INSIDE (encapsulated, DRF paginator pattern).
+- Dynamic query building (no DRF FilterSet in Quarkus): `StringBuilder query = "1=1"` seed + `Map<String,Object> params` (`Parameters` deprecated in 3.36 → use Map); conditionally append ` and field = :name`. Named params, Java field names.
+- Filters DONE & working: `authorId`, `isImageExist` (`images is empty` / `is not empty` via `@OneToMany(mappedBy="post")` inverse side = Django related_name), `search` (DRF SearchFilter style — `?search=` OR'd across `title` + `author.username`, lower() both sides, `%term%`, PARENS critical). All stack on the `1=1 and ...` seed.
+- Best practice: `find()` returns PanacheQuery → call `.count()` AND `.range().list()` on the SAME object (one filter build, two terminal calls).
+
+## Step 23 — Blog CRUD complete (DONE)
+- CREATE ✅, LIST ✅ (paginated + filtered), UPDATE ✅ (`feat: Blog update api is done`).
+- DELETE intentionally SKIPPED — trivial, student chose to move on.
+- **Basic CRUD is considered complete.**
+
+## ⚠️ RESUME HERE — REAL-TIME PHASE (WebSockets)
+Moving from request/response CRUD into the real-time portion of the project.
+1. WebSockets in Quarkus (`quarkus-websockets` already in pom). Map to Django Channels: consumer ≈ `@ServerEndpoint`/`@WebSocket`, `Session` ≈ channel, groups/broadcast ≈ Channels groups.
+2. Likely first feature: live notifications or live comments on a blog post.
+3. Carry forward the same conventions — DTOs, ApiResponse shape, CDI beans, teacher-guided one-concept-at-a-time.
+
+## ⚠️ Known gaps / debt to revisit (carried forward)
+- **Thread-safety smell:** `count` stored as INSTANCE FIELD on the `@ApplicationScoped` (singleton) `BlogGenericServices` — shared mutable state, concurrent requests clobber. Make it a local var. NOT fixed.
+- `GlobalExceptionMapper` catch-all swallows errors with no `Log.error` → crashes invisible. Flagged repeatedly, NOT fixed.
+- `UserResponse(User)` ctor omits `isActive` → always serializes `false`. NOT fixed.
+- `UnauthorizedException` routes through `ApiResponse.error` which hardcodes HTTP 400, not 401. NOT fixed.
 
 ## Recurring lesson (hit 3×): anything you `@Inject` must be a CDI bean (class needs `@ApplicationScoped`); never `new` a bean. Panache queries use Java FIELD names, never db column names.
 
@@ -202,12 +220,12 @@ Done: `com.common.security.CurrentUser` — `@RequestScoped` CDI bean (`private 
 | Spotless + pre-commit | ✅ Solid | Added to pom.xml, hook configured |
 | RS256 keys + JWT verify config | ✅ Solid | privateKey/publicKey.pem + sign/verify/issuer props |
 | CurrentUser @RequestScoped bean | ✅ Solid | request.user holder, getter/setter |
-| @Authenticated / @RolesAllowed | ⚠️ In progress | concept learned, filter next |
-| ContainerRequestFilter (middleware) | ❌ Next step | load User + is_active → setUser |
-| Blog post CRUD | ❌ Not started | |
-| Pagination / filtering | ❌ Not started | |
+| @Authenticated / @RolesAllowed | ⚠️ In progress | @Authenticated solid; @RolesAllowed not yet |
+| ContainerRequestFilter (middleware) | ✅ Solid | AuthenticationFilter loads User + isActive → setUser |
+| Blog post CRUD | ✅ Done | Create/List/Update done; Delete skipped (trivial) |
+| Pagination / filtering | ✅ Solid | limit/offset, generic PaginatedListResponse<T>, dynamic filters (authorId/isImageExist/search), N+1 fixed |
 | File uploads | ❌ Not started | |
-| WebSockets | ❌ Not started | |
+| WebSockets | ❌ Next step | real-time phase starts here |
 | Docker + GraalVM native | ❌ Not started | |
 
 ## Key Django → Quarkus Mappings
