@@ -11,12 +11,14 @@ import com.blog.repository.BlogPostImageRepository;
 import com.blog.repository.BlogPostRepository;
 import com.blog.utils.BlogPostListUtils;
 import com.common.exception.ConflictException;
+import com.common.response.PaginatedListResponse;
 import com.common.security.CurrentUser;
 import com.user.dto.UserResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -69,11 +71,20 @@ public class BlogGenericServices {
 
   @Inject BlogPostListUtils blogPostListUtils;
 
-  public List<BlogPaginatedResponse> getBlogPaginatedList(BlogListParams blogListParams) {
+  public PaginatedListResponse<List<BlogPaginatedResponse>> getBlogPaginatedList(
+      BlogListParams blogListParams) {
 
+    StringBuilder query = new StringBuilder("1=1");
+    Map<String, Object> params = new HashMap<>();
+
+    if (blogListParams.authorId != null) {
+      query.append(" and author.id = :authorId");
+      params.put("authorId", blogListParams.authorId);
+    }
+    long count = blogPostRepository.find(query.toString(), params).count();
     List<BlogPost> blogList =
         blogPostRepository
-            .findAll()
+            .find(query.toString(), params)
             .range(blogListParams.offset, blogListParams.limit + blogListParams.offset - 1)
             .list();
 
@@ -94,7 +105,10 @@ public class BlogGenericServices {
       }
     }
 
-    return blogPaginatedResponses;
+    PaginatedListResponse<List<BlogPaginatedResponse>> blogPaginatedListResponse =
+        new PaginatedListResponse<>(
+            count, blogListParams.limit, blogListParams.offset, blogPaginatedResponses);
+    return blogPaginatedListResponse;
   }
 
   public List<BlogPostImageResponse> getBlogPostImageListResponse(List<BlogPostImage> images) {

@@ -6,6 +6,7 @@ import com.blog.dto.request.BlogCreateRequest;
 import com.blog.dto.request.BlogListParams;
 import com.blog.services.BlogGenericServices;
 import com.common.response.ApiResponse;
+import com.common.response.PaginatedListResponse;
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -39,8 +40,8 @@ public class BlogGenericResource {
   @Path("/post-list-api")
   public Response postList(@BeanParam BlogListParams queryParams) {
 
-    List<BlogPaginatedResponse> blogPostImageResponses =
+    PaginatedListResponse<List<BlogPaginatedResponse>> paginatedListResponse =
         blogGenericServices.getBlogPaginatedList(queryParams);
-    return ApiResponse.success(blogPostImageResponses, "Post fetched successfully");
+    return ApiResponse.success(paginatedListResponse, "Post fetched successfully");
   }
 }

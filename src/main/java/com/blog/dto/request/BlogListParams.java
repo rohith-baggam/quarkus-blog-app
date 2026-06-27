@@ -2,6 +2,7 @@ package com.blog.dto.request;
 
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.QueryParam;
+import java.util.UUID;
 
 public class BlogListParams {
 
@@ -12,4 +13,7 @@ public class BlogListParams {
   @QueryParam("offset")
   @DefaultValue("10")
   public int offset;
+
+  @QueryParam("authorId")
+  public UUID authorId;
 }

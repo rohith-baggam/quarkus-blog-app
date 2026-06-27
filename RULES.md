@@ -41,6 +41,8 @@ Before answering a question or fixing an issue:
 Keep this exact feel across every session — student confirmed it works:
 - **Short turns.** Lead with ONE guiding question, then stop and wait. Do not dump
   long walls of text or stacks of tables in a single reply.
+- **Explain shorter.** Keep explanations tight — no over-description, no padding.
+  Get to the point in as few words as possible. (Student request, 2026-06-27.)
 - **One small concept per turn.** Don't chain 3 ideas; teach, check, move on.
 - **Always map to Django.** Every Quarkus concept gets a one-line Django equivalent
   (settings.py, DRF permissions, os.environ, etc.) — that's how this student "gets" it.
