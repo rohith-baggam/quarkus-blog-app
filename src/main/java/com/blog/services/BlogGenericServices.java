@@ -84,10 +84,13 @@ public class BlogGenericServices {
       UserResponse userResponse = new UserResponse(blogPost.author);
 
       List<BlogPostImage> images = imagesByPost.get(blogPost.id);
-      if (!images.isEmpty()) {
+      if (images != null && !images.isEmpty()) {
         List<BlogPostImageResponse> imageResponses = getBlogPostImageListResponse(images);
         blogPaginatedResponses.add(
             new BlogPaginatedResponse(blogPost, userResponse, imageResponses));
+      } else {
+        blogPaginatedResponses.add(
+            new BlogPaginatedResponse(blogPost, userResponse, new ArrayList<>()));
       }
     }
 

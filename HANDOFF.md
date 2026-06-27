@@ -144,11 +144,27 @@ Two-layer model:
 
 Done: `com.common.security.CurrentUser` — `@RequestScoped` CDI bean (`private User user` + getter/setter). The `request.user` holder.
 
-NEXT (resume here):
-1. Build a `ContainerRequestFilter` (`@Provider`) = Django middleware. Inject `JsonWebToken` → read `sub` → load User via UserRepository → check `is_active` → `currentUser.setUser(user)`.
-2. Add `@Authenticated` to protected endpoints (register + login stay open).
-3. Add `@RolesAllowed("user")` (groups claim already present in token).
-4. Then: Blog post CRUD API (applying full MVC pattern independently).
+## Step 17 — AuthenticationFilter (DONE)
+`com.common.security.AuthenticationFilter` (`@Provider implements ContainerRequestFilter`) = Django middleware. Injects `JsonWebToken` / `UserRepository` / `CurrentUser`. Logic: if `jwt.getSubject()` null → return (public endpoint); else `UUID.fromString(sub)` → `userRepository.find("id", userId).firstResultOptional()` (NOT `findById` — repo is `PanacheRepository<User>` which hardcodes id=Long, mismatches UUID) → check `isActive` → `currentUser.setUser(user)`. Rejections throw `UnauthorizedException`.
+
+## Step 18 — `GET /api/users/me` (@Authenticated) returns current user (DONE)
+
+## Step 19 — Blog Post CREATE API (DONE, confirmed working)
+`/api/blog-generic-api/create-post`. 5 bugs fixed: (1) don't `new` a CDI bean — call own method directly; (2) link image→post FK; (3) remove `@Null` (optional = no annotation); (4) null/empty guard on image list; (5) `@Valid` on resource param. Also: `BlogPostImageRepository` needed `@ApplicationScoped`.
+
+## Step 20 — Blog Post LIST API, limit/offset paginated (DONE)
+`GET /api/blog-generic-api` → `getBlogPaginatedList(BlogListParams)`. Pagination via Panache `findAll().range(offset, offset+limit-1).list()` (range indices zero-based + INCLUSIVE → the `-1`). Query params bundled via `@BeanParam BlogListParams` (fields `@QueryParam`+`@DefaultValue` from jakarta.ws.rs; limit=10, offset=0). NOTE: Quarkus has NO DRF FilterSet/SearchFilter — assemble from primitives (range, Sort, dynamic find).
+
+## Step 21 — N+1 fix (DONE, pending boot fix)
+`com.blog.utils.BlogPostListUtils.getBlogPostImageMap(blogList)`: ONE `find("post.id in ?1", postIds).list()` then groups into `Map<UUID,List<BlogPostImage>>`. Service pulls images via `imagesByPost.getOrDefault(post.id, new ArrayList<>())`. 2 queries total. Django `prefetch_related` pattern (NOT join — join breaks pagination on to-many).
+
+## ⚠️ RESUME HERE
+1. **Add `@ApplicationScoped` to `BlogPostListUtils`** — server was failing to boot ("no bean defining annotation"). Was being fixed at end of session. Confirm boot + 2-query SQL log.
+2. Build remaining `BlogListParams` filters ONE BY ONE: search by title (`like`), sort by title (`Sort`), filter by authorId, filter by createdAt — all optional → dynamic query building.
+3. Pagination metadata in response (total count / page info — DRF `count`/`results` shape).
+4. Then `@RolesAllowed("user")` (groups claim already in token); then blog CRUD read/update/delete + ownership checks.
+
+## Recurring lesson (hit 3×): anything you `@Inject` must be a CDI bean (class needs `@ApplicationScoped`); never `new` a bean. Panache queries use Java FIELD names, never db column names.
 
 ## Key Concepts Learned This Session
 - MVC: Resource → Service → Repository — who does what
