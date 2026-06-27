@@ -2,8 +2,10 @@ package com.blog.resource;
 
 import com.blog.dto.BlogCreateResponse;
 import com.blog.dto.BlogPaginatedResponse;
+import com.blog.dto.BlogUpdateResponse;
 import com.blog.dto.request.BlogCreateRequest;
 import com.blog.dto.request.BlogListParams;
+import com.blog.dto.request.BlogUpdateRequest;
 import com.blog.services.BlogGenericServices;
 import com.common.response.ApiResponse;
 import com.common.response.PaginatedListResponse;
@@ -14,6 +16,7 @@ import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -45,14 +48,12 @@ public class BlogGenericResource {
     return ApiResponse.success(blogCreateResponse, "Blog Post create successfully");
   }
 
-  // @PUT
-  // @Authenticated
-  // @Path("/update-post")
-  // public Response updatedPost(
-  // @Valid BlogUpdateRequest request) {
+  @PUT
+  @Authenticated
+  @Path("/update-post")
+  public Response updatedPost(@Valid BlogUpdateRequest request) {
 
-  // BlogUpdateResponse blogUpdateResponse =
-  // blogGenericServices.updatePost(request);
-  // return ApiResponse.success(blogUpdateResponse, "updated successfully");
-  // }
+    BlogUpdateResponse blogUpdateResponse = blogGenericServices.updatePost(request);
+    return ApiResponse.success(blogUpdateResponse, "updated successfully");
+  }
 }

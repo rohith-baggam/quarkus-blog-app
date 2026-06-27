@@ -4,14 +4,14 @@ import java.util.UUID;
 
 public class BlogUpdateResponse {
 
-  public UUID postId;
+  public UUID id;
 
   public String title;
 
   public String description;
 
-  public BlogUpdateResponse(UUID postId, String title, String descrption) {
-    this.postId = postId;
+  public BlogUpdateResponse(UUID id, String title, String descrption) {
+    this.id = id;
     this.title = title;
     this.description = descrption;
   }

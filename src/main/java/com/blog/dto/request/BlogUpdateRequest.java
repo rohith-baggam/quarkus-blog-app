@@ -2,11 +2,10 @@ package com.blog.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.hibernate.validator.constraints.UUID;
+import java.util.UUID;
 
 public class BlogUpdateRequest {
 
-  @NotBlank(message = "post id required field to edit post")
   public UUID postId;
 
   @NotBlank(message = "Title is required field")

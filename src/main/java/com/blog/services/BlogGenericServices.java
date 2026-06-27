@@ -3,8 +3,10 @@ package com.blog.services;
 import com.blog.dto.BlogCreateResponse;
 import com.blog.dto.BlogPaginatedResponse;
 import com.blog.dto.BlogPostImageResponse;
+import com.blog.dto.BlogUpdateResponse;
 import com.blog.dto.request.BlogCreateRequest;
 import com.blog.dto.request.BlogListParams;
+import com.blog.dto.request.BlogUpdateRequest;
 import com.blog.model.BlogPost;
 import com.blog.model.BlogPostImage;
 import com.blog.repository.BlogPostImageRepository;
@@ -14,6 +16,7 @@ import com.common.exception.ConflictException;
 import com.common.response.PaginatedListResponse;
 import com.common.security.CurrentUser;
 import com.user.dto.UserResponse;
+import io.quarkus.security.UnauthorizedException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -69,32 +72,30 @@ public class BlogGenericServices {
     }
   }
 
-  // public BlogUpdateResponse updatePost(
-  // BlogUpdateRequest request) {
+  @Transactional
+  public BlogUpdateResponse updatePost(BlogUpdateRequest request) {
 
-  // BlogPost blogPost = blogPostRepository.findById(request.postId).orElseThrow(
-  // new ConflictException("Invalid post id"));
+    BlogPost blogPost =
+        blogPostRepository
+            .findByPostId(request.postId)
+            .orElseThrow(() -> new ConflictException("Invalid post id"));
 
-  // Map<String, Object> updateMap = new HashMap<>();
+    if (!blogPost.author.id.toString().equals(currentUser.getUser().id.toString())) {
+      throw new UnauthorizedException("Only post author has access to edit the post");
+    }
 
-  // if (request.title != null && !request.title.equals(blogPost.title)) {
-  // updateMap.put("title", request.title);
+    if (request.title != null && !request.title.equals(blogPost.title)) {
+      blogPost.title = request.title;
+    }
 
-  // }
+    if (request.description != null && !request.description.equals(blogPost.description)) {
+      blogPost.description = request.description;
+    }
 
-  // if (request.description != null &&
-  // !request.description.equals(blogPost.description)) {
-  // updateMap.put("description", request.description);
-
-  // }
-
-  // blogPostRepository.update("id=" + request.postId.toString(), updateMap);
-  // BlogUpdateResponse blogUpdateResponse = new BlogUpdateResponse(
-  // request.postId,
-  // request.title,
-  // request.description);
-  // return blogUpdateResponse;
-  // }
+    BlogUpdateResponse blogUpdateResponse =
+        new BlogUpdateResponse(request.postId, request.title, request.description);
+    return blogUpdateResponse;
+  }
 
   @Inject BlogPostListUtils blogPostListUtils;
 
